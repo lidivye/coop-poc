@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COOP Security PoC</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            width: 340px;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.12);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 18px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 4px;
+            background: #596bc1;
+            color: white;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #555;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>COOP Security PoC</h2>
+
+    <label for="target">Target URL</label>
+    <input type="url" id="target"
+           placeholder="https://example.com"
+           required>
+
+    <button onclick="startTest()">Start PoC</button>
+
+    <p id="status">Ready to test.</p>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const suppliedTarget = params.get("target");
+
+    if (suppliedTarget) {
+        document.getElementById("target").value = suppliedTarget;
+    }
+
+    function startTest() {
+        const targetInput = document.getElementById("target");
+        const status = document.getElementById("status");
+
+        let target;
+
+        try {
+            target = new URL(targetInput.value);
+        } catch {
+            status.textContent = "Invalid target URL.";
+            return;
+        }
+
+        if (!["http:", "https:"].includes(target.protocol)) {
+            status.textContent = "Only HTTP and HTTPS targets are allowed.";
+            return;
+        }
+
+        // Open the target following a user click.
+        const popup = window.open(target.href, "_blank");
+
+        if (!popup) {
+            status.textContent = "Popup blocked. Allow popups and retry.";
+            return;
+        }
+
+        status.textContent =
+            "Target opened. Waiting 5 seconds for the demonstration...";
+
+        // Harmless destination hosted in this repository.
+        const destination = new URL(
+            "destination.html",
+            window.location.href
+        );
+
+        setTimeout(() => {
+            try {
+                if (popup.closed) {
+                    status.textContent =
+                        "The popup is no longer accessible. " +
+                        "The opener relationship may have been severed.";
+                    return;
+                }
+
+                // Attempt to navigate the opened window.
+                popup.location.href = destination.href;
+
+                status.textContent =
+                    "Navigation attempted. Check the opened window.";
+            } catch (error) {
+                status.textContent =
+                    "Navigation attempt failed: " + error.message;
+            }
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>
