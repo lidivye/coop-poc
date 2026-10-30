@@ -4,9 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>COOP Security PoC</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             background: #ffffff;
@@ -15,6 +20,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
         }
 
         button {
@@ -27,14 +37,19 @@
             font-size: 14px;
         }
 
+        button:hover {
+            background: #4859aa;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
         #status {
             font-size: 14px;
             color: #555;
             margin-top: 18px;
-        }
-
-        .container {
-            text-align: center;
         }
     </style>
 </head>
@@ -42,75 +57,95 @@
 <body>
 
 <div class="container">
-    <button id="start">Start COOP Demonstration</button>
-    <p id="status">Authorized security testing demonstration.</p>
-    <button id="navigate" hidden>
-        Navigate to Controlled Demo Page
+
+    <button id="start">
+        Start COOP Demonstration
     </button>
+
+    <p id="status">
+        Authorized security testing demonstration.
+    </p>
+
 </div>
 
 <script>
+
+    // Read target from URL parameter
     const params = new URLSearchParams(window.location.search);
     const targetUrl = params.get("target");
 
-    const status = document.getElementById("status");
     const start = document.getElementById("start");
-    const navigate = document.getElementById("navigate");
+    const status = document.getElementById("status");
 
     let targetWindow = null;
 
-    start.addEventListener("click", () => {
+    start.addEventListener("click", function () {
+
         let target;
 
+        // Validate target URL
         try {
             target = new URL(targetUrl);
 
             if (!["http:", "https:"].includes(target.protocol)) {
                 throw new Error("Invalid protocol");
             }
-        } catch {
+
+        } catch (error) {
             status.textContent = "Invalid or missing target URL.";
             return;
         }
 
+        // Open target in a new window
         targetWindow = window.open(target.href, "_blank");
 
         if (!targetWindow) {
-            status.textContent = "Popup blocked. Allow popups and retry.";
+            status.textContent =
+                "Popup blocked. Allow popups and retry.";
             return;
         }
 
-        start.hidden = true;
+        // Disable button after successful opening
+        start.disabled = true;
+
         status.textContent =
             "Target opened. Waiting 5 seconds...";
 
-        setTimeout(() => {
-            status.textContent =
-                "Ready for controlled navigation testing.";
+        // Wait 5 seconds before controlled navigation
+        setTimeout(function () {
 
-            navigate.hidden = false;
-        }, 5000);
-    });
-
-    navigate.addEventListener("click", () => {
-        try {
-            if (!targetWindow || targetWindow.closed) {
+            if (targetWindow.closed) {
                 status.textContent =
-                    "Target window is no longer available.";
+                    "Target window is closed.";
                 return;
             }
 
-            targetWindow.location.href =
-                new URL("destination.html", window.location.href).href;
-
             status.textContent =
-                "Navigation attempted. Check the target window.";
+                "Controlled navigation test initiated.";
 
-        } catch (error) {
-            status.textContent =
-                "Navigation failed: " + error.message;
-        }
+            // Navigate to the controlled demonstration page
+            const destination = new URL(
+                "destination.html",
+                window.location.href
+            );
+
+            try {
+                targetWindow.location.href = destination.href;
+
+                status.textContent =
+                    "Navigation attempted. Check the opened window.";
+
+            } catch (error) {
+
+                status.textContent =
+                    "Navigation blocked: " + error.message;
+
+            }
+
+        }, 5000);
+
     });
+
 </script>
 
 </body>
